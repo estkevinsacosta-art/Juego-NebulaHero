@@ -1,870 +1,2181 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>NEBULA HERO — Ritmo con las manos</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>NEBULA HERO VR</title>
+
 <style>
-  :root{
-    --bg:#05050d;
-    --bg2:#0a0a1a;
-    --panel:#0c0e1c;
-    --cyan:#00e5ff;
-    --magenta:#ff2e92;
-    --amber:#ffd23f;
-    --green:#39ff88;
-    --text:#eef1fb;
-    --muted:#7b81a8;
-    --line: rgba(238,241,251,0.12);
-  }
-  *{box-sizing:border-box;}
-  html,body{
-    margin:0; padding:0; width:100%; height:100%;
-    background:var(--bg); color:var(--text);
-    font-family:'Rajdhani',sans-serif;
-    overflow:hidden;
-    -webkit-user-select:none; user-select:none;
-    overscroll-behavior:none;
-  }
-  #stage{ position:fixed; inset:0; }
-  #three-canvas{ position:absolute; inset:0; display:block; touch-action:none; }
-  #hand-overlay{ position:absolute; inset:0; pointer-events:none; }
-  #hud-video{
-    position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;
-  }
 
-  /* ---------- shared panel look: angular sci-fi, clipped corners ---------- */
-  .panel{
-    background:linear-gradient(180deg, rgba(12,14,28,0.92), rgba(6,7,16,0.96));
-    border:1px solid var(--line);
-    clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
-    box-shadow: 0 0 0 1px rgba(0,229,255,0.05), 0 20px 60px rgba(0,0,0,0.55);
-  }
+* {
+    box-sizing: border-box;
+}
 
-  /* ---------- overlays ---------- */
-  #overlay{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    padding:24px; z-index:20;
-    background: radial-gradient(ellipse at 50% 30%, rgba(0,60,90,0.25), rgba(3,3,9,0.75) 60%);
-  }
-  #overlay.hidden{ display:none; }
+html,
+body {
 
-  .card{ width:min(560px, 92vw); padding:34px 32px 30px; }
+    margin: 0;
 
-  .eyebrow{
-    font-family:'Rajdhani'; font-weight:700; letter-spacing:.14em; font-size:12.5px;
-    color:var(--cyan); display:flex; align-items:center; gap:10px; margin-bottom:10px;
-  }
-  .eyebrow::before{ content:""; width:22px; height:2px; background:var(--cyan); box-shadow:0 0 8px var(--cyan); }
+    width: 100%;
+    height: 100%;
 
-  h1.title{
-    font-family:'Orbitron'; font-weight:900; font-size:clamp(30px,7vw,44px);
-    margin:0 0 6px; line-height:1.02; letter-spacing:.01em;
-    background:linear-gradient(100deg, #fff 0%, var(--cyan) 55%, var(--magenta) 100%);
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-    text-shadow:0 0 40px rgba(0,229,255,0.25);
-  }
-  .sub{ color:var(--muted); font-size:16px; line-height:1.5; margin:0 0 22px; max-width:46ch; }
+    overflow: hidden;
 
-  .rules{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:0 0 22px; }
-  .rule{
-    border:1px solid var(--line); border-radius:2px; padding:10px 12px; font-size:14px; color:var(--text);
-    display:flex; gap:10px; align-items:flex-start; background:rgba(255,255,255,0.02);
-  }
-  .rule b{ display:block; font-family:'Orbitron'; font-size:11px; letter-spacing:.06em; color:var(--muted); margin-bottom:3px; font-weight:600;}
+    background: #000;
 
-  .btn{
-    font-family:'Rajdhani'; font-weight:700; font-size:16px; letter-spacing:.03em;
-    padding:14px 20px; border:1px solid var(--line); cursor:pointer;
-    background:rgba(255,255,255,0.03); color:var(--text);
-    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-    display:flex; align-items:center; justify-content:center; gap:10px;
-    transition:transform .12s ease, background .15s ease, border-color .15s ease;
-  }
-  .btn:active{ transform:scale(.97); }
-  .btn.primary{
-    background:linear-gradient(100deg, rgba(0,229,255,0.18), rgba(255,46,146,0.18));
-    border-color: rgba(0,229,255,0.5);
-  }
-  .btn.primary:hover{ border-color:var(--cyan); background:linear-gradient(100deg, rgba(0,229,255,0.28), rgba(255,46,146,0.28)); }
-  .btn.secondary:hover{ border-color:var(--muted); }
-  .btn-row{ display:flex; flex-direction:column; gap:12px; }
-  .hint{ margin-top:16px; font-size:12.5px; color:var(--muted); line-height:1.5; }
-  .status-line{ font-size:13px; color:var(--amber); margin-top:10px; min-height:18px; }
+    font-family: Arial, sans-serif;
 
-  /* ---------- HUD ---------- */
-  #hud{ position:absolute; inset:0; pointer-events:none; z-index:10; display:none; }
-  #hud.active{ display:block; }
+    color: white;
+}
 
-  #topbar{
-    position:absolute; top:16px; left:16px; right:16px; display:flex; justify-content:space-between; align-items:flex-start; gap:14px;
-  }
-  .stat-block{ padding:10px 18px; min-width:120px; }
-  .stat-label{ font-size:10.5px; letter-spacing:.14em; color:var(--muted); font-family:'Rajdhani'; font-weight:700; }
-  .stat-value{ font-family:'Orbitron'; font-size:22px; font-weight:800; color:var(--text); line-height:1.15; }
-  .stat-value.combo{ color:var(--amber); }
+#game {
 
-  #exit-btn{
-    pointer-events:auto; padding:9px 14px; font-size:12px; align-self:flex-start;
-  }
+    position: fixed;
 
-  #song-progress{
-    position:absolute; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--cyan),var(--magenta));
-    width:0%; box-shadow:0 0 10px var(--cyan);
-  }
+    inset: 0;
+}
 
-  #lane-legend{
-    position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
-    display:flex; gap:10px; pointer-events:none;
-  }
-  .lane-chip{
-    width:64px; padding:8px 0 7px; text-align:center; border-top:3px solid var(--c);
-    background:rgba(10,11,22,0.55); font-family:'Orbitron'; font-size:13px; font-weight:700; color:var(--text);
-    transition: background .1s ease, box-shadow .1s ease;
-  }
-  .lane-chip.on{ background:rgba(255,255,255,0.14); box-shadow:0 0 16px var(--c); }
-  .lane-chip small{ display:block; font-family:'Rajdhani'; font-weight:600; font-size:10px; color:var(--muted); margin-top:2px; }
+canvas {
 
-  #touch-controls{
-    position:absolute; bottom:78px; left:50%; transform:translateX(-50%);
-    display:none; gap:12px; pointer-events:auto;
-  }
-  #touch-controls.show{ display:flex; }
-  .touch-btn{
-    width:66px; height:66px; border-radius:50%; border:2px solid var(--c);
-    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,0.15), rgba(255,255,255,0.02));
-    box-shadow:0 0 14px color-mix(in srgb, var(--c) 60%, transparent);
-  }
-  .touch-btn.on{ background:var(--c); box-shadow:0 0 26px var(--c); }
+    display: block;
+}
 
-  #cam-preview{
-    position:absolute; top:70px; right:16px; width:150px; height:112px; overflow:hidden;
-    display:none; pointer-events:auto; cursor:pointer;
-  }
-  #cam-preview.show{ display:block; }
-  #cam-preview video, #cam-preview canvas{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scaleX(-1); }
-  #cam-preview .cam-label{ position:absolute; bottom:0; left:0; right:0; padding:3px 6px; font-size:9.5px; letter-spacing:.08em; background:rgba(0,0,0,0.55); color:var(--cyan); font-weight:700; text-align:center; font-family:'Rajdhani';}
 
-  #toast{
-    position:absolute; top:100px; left:50%; transform:translateX(-50%);
-    padding:8px 16px; font-size:13px; color:var(--amber); opacity:0; transition:opacity .3s ease;
-    pointer-events:none; white-space:nowrap;
-  }
-  #toast.show{ opacity:1; }
+/* =========================
+   MENÚ
+========================= */
 
-  #judge{
-    position:absolute; left:50%; top:56%; transform:translate(-50%,-50%) scale(0.8);
-    font-family:'Orbitron'; font-weight:900; font-size:26px; letter-spacing:.05em;
-    opacity:0; pointer-events:none; text-shadow:0 0 18px currentColor;
-  }
-  #judge.show{ animation: judgePop .5s ease forwards; }
-  @keyframes judgePop{
-    0%{ opacity:0; transform:translate(-50%,-50%) scale(0.7); }
-    18%{ opacity:1; transform:translate(-50%,-50%) scale(1.08); }
-    70%{ opacity:1; transform:translate(-50%,-55%) scale(1); }
-    100%{ opacity:0; transform:translate(-50%,-70%) scale(1); }
-  }
+#menu {
 
-  #look-hint{
-    position:absolute; left:16px; bottom:14px; font-size:11.5px; color:var(--muted);
-    display:flex; align-items:center; gap:6px;
-  }
+    position: absolute;
 
-  @media (max-width:640px){
-    .rules{ grid-template-columns:1fr; }
-    .stat-block{ min-width:88px; padding:8px 12px; }
-    .stat-value{ font-size:17px; }
-    #cam-preview{ width:104px; height:78px; top:62px; }
-    .lane-chip{ width:52px; font-size:11px; }
-  }
+    inset: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    text-align: center;
+
+    background:
+        radial-gradient(
+            circle,
+            #071c2b,
+            #020207 70%
+        );
+
+    z-index: 10;
+}
+
+.panel {
+
+    width: min(500px, 90vw);
+
+    padding: 35px;
+
+    border: 1px solid #00e5ff;
+
+    background:
+        rgba(0, 0, 0, .75);
+
+    box-shadow:
+        0 0 40px
+        rgba(0, 229, 255, .25);
+}
+
+h1 {
+
+    margin: 0 0 10px;
+
+    font-size: 48px;
+
+    color: #00e5ff;
+
+    text-shadow:
+        0 0 25px #00e5ff;
+}
+
+p {
+
+    color: #aaa;
+
+    line-height: 1.5;
+}
+
+button {
+
+    width: 100%;
+
+    margin-top: 15px;
+
+    padding: 16px;
+
+    border: 1px solid #00e5ff;
+
+    background: #071820;
+
+    color: white;
+
+    font-size: 17px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+button:hover {
+
+    background: #00e5ff;
+
+    color: black;
+
+    box-shadow:
+        0 0 30px #00e5ff;
+}
+
+
+/* =========================
+   HUD
+========================= */
+
+#hud {
+
+    position: absolute;
+
+    top: 20px;
+
+    left: 20px;
+
+    z-index: 5;
+
+    display: none;
+
+    pointer-events: none;
+}
+
+.stat {
+
+    margin-bottom: 8px;
+
+    padding: 10px 15px;
+
+    background:
+        rgba(0, 0, 0, .6);
+
+    border-left:
+        3px solid #00e5ff;
+}
+
+.label {
+
+    color: #777;
+
+    font-size: 11px;
+}
+
+.value {
+
+    font-size: 25px;
+
+    font-weight: bold;
+}
+
+
+/* =========================
+   MENSAJE
+========================= */
+
+#message {
+
+    position: absolute;
+
+    top: 50%;
+
+    left: 50%;
+
+    transform:
+        translate(-50%, -50%);
+
+    font-size: 45px;
+
+    font-weight: bold;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    z-index: 20;
+}
+
 </style>
+
 </head>
+
+
 <body>
 
-<div id="stage">
-  <canvas id="three-canvas"></canvas>
-  <canvas id="hand-overlay"></canvas>
-  <video id="hud-video" playsinline muted></video>
-</div>
+
+<div id="game"></div>
+
+
+<!-- =========================
+     HUD
+========================= -->
 
 <div id="hud">
-  <div id="song-progress"></div>
-  <div id="topbar">
-    <div class="stat-block panel">
-      <div class="stat-label">PUNTOS</div>
-      <div class="stat-value" id="score-val">0</div>
+
+    <div class="stat">
+
+        <div class="label">
+            PUNTOS
+        </div>
+
+        <div
+            id="score"
+            class="value">
+
+            0
+
+        </div>
+
     </div>
-    <button id="exit-btn" class="btn secondary panel">✕ SALIR</button>
-    <div class="stat-block panel">
-      <div class="stat-label">COMBO</div>
-      <div class="stat-value combo" id="combo-val">0</div>
+
+
+    <div class="stat">
+
+        <div class="label">
+            COMBO
+        </div>
+
+        <div
+            id="combo"
+            class="value">
+
+            x0
+
+        </div>
+
     </div>
-  </div>
 
-  <div id="judge"></div>
-  <div id="toast"></div>
-
-  <div id="cam-preview">
-    <video id="preview-video" playsinline muted autoplay></video>
-    <canvas id="preview-overlay"></canvas>
-    <div class="cam-label">MANOS</div>
-  </div>
-
-  <div id="lane-legend"></div>
-  <div id="touch-controls"></div>
-  <div id="look-hint">◐ ARRASTRA PARA MIRAR ALREDEDOR</div>
 </div>
 
-<div id="overlay">
-  <div class="card panel">
-    <div class="eyebrow">RITMO · ENTORNO 360°</div>
-    <h1 class="title">NEBULA HERO</h1>
-    <p class="sub">Un campo de asteroides gira a tu alrededor. Los nodos de luz caen por cuatro carriles: tócalos justo cuando lleguen a la línea, con las manos frente a la cámara o con tu teclado.</p>
 
-    <div class="rules">
-      <div class="rule"><span>🖐️</span><div><b>MODO MANOS</b>Activa la cámara y mueve la mano sobre cada carril</div></div>
-      <div class="rule"><span>⌨️</span><div><b>MODO TECLADO / TÁCTIL</b>Usa D F J K o los botones en pantalla</div></div>
-      <div class="rule"><span>◐</span><div><b>MIRAR ALREDEDOR</b>Arrastra el fondo para explorar los 360°</div></div>
-      <div class="rule"><span>🔥</span><div><b>COMBO</b>Encadena aciertos para multiplicar tu puntaje</div></div>
+<div id="message"></div>
+
+
+<!-- =========================
+     MENÚ
+========================= -->
+
+<div id="menu">
+
+    <div class="panel">
+
+        <h1>
+            NEBULA HERO
+        </h1>
+
+        <p>
+            Juego musical VR para Meta Quest 3
+        </p>
+
+        <p>
+
+            🖐️ Usa tus manos reales para
+            golpear las notas.
+
+            <br><br>
+
+            🔵 Mano izquierda
+
+            <br>
+
+            🔴 Mano derecha
+
+            <br>
+
+            🟢 Ambas manos
+
+        </p>
+
+
+        <button id="vrButton">
+
+            🥽 JUGAR EN META QUEST 3
+
+        </button>
+
+
+        <button id="desktopButton">
+
+            💻 PROBAR SIN VR
+
+        </button>
+
+
+        <p id="status"></p>
+
     </div>
 
-    <div class="btn-row">
-      <button id="btn-hands" class="btn primary">🖐️ &nbsp;JUGAR CON LAS MANOS (cámara)</button>
-      <button id="btn-manual" class="btn secondary">⌨️ &nbsp;JUGAR CON TECLADO / TÁCTIL</button>
-    </div>
-    <div class="status-line" id="status-line"></div>
-    <div class="hint">Necesitarás permitir el acceso a la cámara para el modo manos. El video nunca se envía a ningún servidor: todo el seguimiento ocurre en tu navegador.</div>
-  </div>
 </div>
 
-<script type="importmap">
-{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js" crossorigin="anonymous"></script>
 
 <script type="module">
-import * as THREE from 'three';
 
-/* ============================================================
-   CONFIG
-   ============================================================ */
-const LANES = 4;
-const LANE_COLORS = [0x00e5ff, 0xff2e92, 0xffd23f, 0x39ff88];
-const LANE_COLORS_CSS = ['#00e5ff', '#ff2e92', '#ffd23f', '#39ff88'];
-const LANE_KEYS = ['d', 'f', 'j', 'k'];
-const LANE_PITCH = [523.25, 659.25, 783.99, 987.77];
-const LANE_X = [-1.65, -0.55, 0.55, 1.65];
 
-const SPAWN_Z = -17;
-const HIT_Z = -3.2;
-const TRAVEL_TIME = 2.35;
-const HIT_WINDOW_EARLY = 0.86;
-const HIT_WINDOW_LATE = 1.14;
-const MISS_AT = 1.32;
+/* =========================================================
+   THREE.JS
+========================================================= */
 
-const BPM = 128;
-const SONG_DURATION = 72;
+import * as THREE from
+"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
 
-/* ============================================================
-   DOM
-   ============================================================ */
-const overlay = document.getElementById('overlay');
-const statusLine = document.getElementById('status-line');
-const hud = document.getElementById('hud');
-const scoreVal = document.getElementById('score-val');
-const comboVal = document.getElementById('combo-val');
-const songProgress = document.getElementById('song-progress');
-const judgeEl = document.getElementById('judge');
-const toastEl = document.getElementById('toast');
-const laneLegend = document.getElementById('lane-legend');
-const touchControls = document.getElementById('touch-controls');
-const camPreview = document.getElementById('cam-preview');
-const previewVideo = document.getElementById('preview-video');
-const previewOverlay = document.getElementById('preview-overlay');
-const hudVideo = document.getElementById('hud-video');
-const handOverlayCanvas = document.getElementById('hand-overlay');
-const handOverlayCtx = handOverlayCanvas.getContext('2d');
-const previewCtx = previewOverlay.getContext('2d');
 
-function resizeOverlayCanvases(){
-  handOverlayCanvas.width = window.innerWidth;
-  handOverlayCanvas.height = window.innerHeight;
-  previewOverlay.width = previewOverlay.clientWidth;
-  previewOverlay.height = previewOverlay.clientHeight;
-}
+/* =========================================================
+   VARIABLES PRINCIPALES
+========================================================= */
 
-/* build lane legend + touch buttons */
-for(let i=0;i<LANES;i++){
-  const chip = document.createElement('div');
-  chip.className = 'lane-chip';
-  chip.style.setProperty('--c', LANE_COLORS_CSS[i]);
-  chip.id = 'chip-'+i;
-  chip.innerHTML = LANE_KEYS[i].toUpperCase() + '<small>carril '+(i+1)+'</small>';
-  laneLegend.appendChild(chip);
+let scene;
 
-  const tb = document.createElement('div');
-  tb.className = 'touch-btn panel';
-  tb.style.setProperty('--c', LANE_COLORS_CSS[i]);
-  tb.id = 'touch-'+i;
-  touchControls.appendChild(tb);
-}
+let camera;
 
-/* ============================================================
-   AUDIO
-   ============================================================ */
-let audioCtx = null;
-let beatTimer = null;
-function ensureAudio(){
-  if(!audioCtx){
-    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  }
-  if(audioCtx.state === 'suspended') audioCtx.resume();
-}
-function beep(freq, duration, type, gainVal){
-  if(!audioCtx) return;
-  const o = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
-  o.type = type; o.frequency.value = freq;
-  o.connect(g); g.connect(audioCtx.destination);
-  const now = audioCtx.currentTime;
-  g.gain.setValueAtTime(0.0001, now);
-  g.gain.exponentialRampToValueAtTime(gainVal, now+0.008);
-  g.gain.exponentialRampToValueAtTime(0.0001, now+duration);
-  o.start(now); o.stop(now+duration+0.02);
-}
-function hitSound(lane){ beep(LANE_PITCH[lane], 0.16, 'triangle', 0.20); }
-function missSound(){ beep(98, 0.22, 'sawtooth', 0.10); }
-function kickSound(){ beep(72, 0.12, 'sine', 0.14); }
-function hatSound(){ beep(4200, 0.03, 'square', 0.02); }
-function startBeat(){
-  const beatMs = (60/BPM)*1000;
-  let n = 0;
-  beatTimer = setInterval(()=>{
-    if(n % 2 === 0) kickSound(); else hatSound();
-    n++;
-  }, beatMs/2);
-}
-function stopBeat(){ if(beatTimer){ clearInterval(beatTimer); beatTimer = null; } }
+let renderer;
 
-/* ============================================================
-   THREE.JS SCENE — 360° environment + fixed-to-camera highway
-   ============================================================ */
-const canvas = document.getElementById('three-canvas');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:false });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-renderer.setSize(window.innerWidth, window.innerHeight);
+let xrSession = null;
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(68, window.innerWidth/window.innerHeight, 0.1, 700);
-camera.position.set(0,0,0);
-scene.add(camera);
+let referenceSpace = null;
 
-/* --- procedural 360 nebula skybox --- */
-function buildSkyTexture(){
-  const w = 2048, h = 1024;
-  const c = document.createElement('canvas');
-  c.width = w; c.height = h;
-  const ctx = c.getContext('2d');
-  const bgGrad = ctx.createLinearGradient(0,0,0,h);
-  bgGrad.addColorStop(0, '#04030b');
-  bgGrad.addColorStop(0.5, '#070713');
-  bgGrad.addColorStop(1, '#0a0620');
-  ctx.fillStyle = bgGrad;
-  ctx.fillRect(0,0,w,h);
+let xrMode = false;
 
-  const blobs = [
-    {x:.18,y:.35,r:340,c:'rgba(0,229,255,0.16)'},
-    {x:.62,y:.55,r:420,c:'rgba(255,46,146,0.14)'},
-    {x:.85,y:.22,r:300,c:'rgba(120,80,255,0.14)'},
-    {x:.40,y:.75,r:260,c:'rgba(57,255,136,0.10)'},
-    {x:.05,y:.70,r:280,c:'rgba(255,210,63,0.08)'},
-  ];
-  blobs.forEach(b=>{
-    const g = ctx.createRadialGradient(b.x*w,b.y*h,0,b.x*w,b.y*h,b.r);
-    g.addColorStop(0,b.c);
-    g.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0,0,w,h);
-  });
 
-  for(let i=0;i<1400;i++){
-    const x = Math.random()*w, y = Math.random()*h;
-    const r = Math.random()*1.4 + 0.2;
-    const a = Math.random()*0.8 + 0.2;
-    ctx.fillStyle = `rgba(255,255,255,${a})`;
-    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
-  }
-  for(let i=0;i<40;i++){
-    const x = Math.random()*w, y = Math.random()*h;
-    const r = Math.random()*2.2 + 1.4;
-    ctx.fillStyle = 'rgba(180,220,255,0.9)';
-    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle = 'rgba(180,220,255,0.15)';
-    ctx.beginPath(); ctx.arc(x,y,r*5,0,Math.PI*2); ctx.fill();
-  }
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
-const skyGeo = new THREE.SphereGeometry(260, 48, 32);
-const skyMat = new THREE.MeshBasicMaterial({ map: buildSkyTexture(), side: THREE.BackSide });
-const skyMesh = new THREE.Mesh(skyGeo, skyMat);
-scene.add(skyMesh);
+/* =========================================================
+   ESTADO DEL JUEGO
+========================================================= */
 
-/* shared glow sprite texture */
-function buildGlowTexture(){
-  const s = 128;
-  const c = document.createElement('canvas'); c.width=s; c.height=s;
-  const ctx = c.getContext('2d');
-  const g = ctx.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
-  g.addColorStop(0,'rgba(255,255,255,1)');
-  g.addColorStop(0.35,'rgba(255,255,255,0.55)');
-  g.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.fillStyle = g; ctx.fillRect(0,0,s,s);
-  return new THREE.CanvasTexture(c);
-}
-const glowTex = buildGlowTexture();
+let running = false;
 
-/* --- highway attached to camera: stays on screen while you look around --- */
-const highway = new THREE.Group();
-highway.position.set(0, -0.9, 0);
-highway.rotation.x = -0.32;
-camera.add(highway);
 
-const laneGroups = [];
-for(let i=0;i<LANES;i++){
-  const laneGroup = new THREE.Group();
-  laneGroup.position.x = LANE_X[i];
-  highway.add(laneGroup);
+/* =========================================================
+   ESTADÍSTICAS
+========================================================= */
 
-  const trackGeo = new THREE.PlaneGeometry(0.62, Math.abs(SPAWN_Z-HIT_Z)+2);
-  const trackMat = new THREE.MeshBasicMaterial({
-    color: LANE_COLORS[i], transparent:true, opacity:0.10, side:THREE.DoubleSide
-  });
-  const track = new THREE.Mesh(trackGeo, trackMat);
-  track.rotation.x = -Math.PI/2;
-  track.position.z = (SPAWN_Z+HIT_Z)/2;
-  laneGroup.add(track);
+let score = 0;
 
-  const edgeGeo = new THREE.PlaneGeometry(0.03, Math.abs(SPAWN_Z-HIT_Z)+2);
-  const edgeMat = new THREE.MeshBasicMaterial({ color: LANE_COLORS[i], transparent:true, opacity:0.55 });
-  [-0.30,0.30].forEach(off=>{
-    const edge = new THREE.Mesh(edgeGeo, edgeMat);
-    edge.rotation.x = -Math.PI/2;
-    edge.position.set(off, 0.001, (SPAWN_Z+HIT_Z)/2);
-    laneGroup.add(edge);
-  });
+let combo = 0;
 
-  const ringGeo = new THREE.RingGeometry(0.30, 0.40, 24);
-  const ringMat = new THREE.MeshBasicMaterial({ color: LANE_COLORS[i], transparent:true, opacity:0.85, side:THREE.DoubleSide });
-  const ring = new THREE.Mesh(ringGeo, ringMat);
-  ring.rotation.x = -Math.PI/2;
-  ring.position.z = HIT_Z;
-  ring.position.y = 0.01;
-  laneGroup.add(ring);
+let misses = 0;
 
-  const flashMat = new THREE.SpriteMaterial({ map: glowTex, color: LANE_COLORS[i], transparent:true, opacity:0, blending: THREE.AdditiveBlending, depthWrite:false });
-  const flash = new THREE.Sprite(flashMat);
-  flash.scale.set(1.6,1.6,1.6);
-  flash.position.set(0, 0.05, HIT_Z);
-  laneGroup.add(flash);
+let hits = 0;
 
-  laneGroups.push({ group: laneGroup, ring, flash, flashOpacity:0 });
-}
 
-/* far "portal" ring to frame the entrance of the tunnel */
-{
-  const portalGeo = new THREE.RingGeometry(2.55, 2.75, 48);
-  const portalMat = new THREE.MeshBasicMaterial({ color:0x88aaff, transparent:true, opacity:0.35, side:THREE.DoubleSide });
-  const portal = new THREE.Mesh(portalGeo, portalMat);
-  portal.rotation.x = -Math.PI/2;
-  portal.position.set(0, 0.02, SPAWN_Z-1);
-  highway.add(portal);
-}
+/* =========================================================
+   OBJETOS
+========================================================= */
 
-/* ============================================================
-   NOTES
-   ============================================================ */
-const noteGeo = new THREE.IcosahedronGeometry(0.27, 0);
 const notes = [];
 
-function spawnNote(lane){
-  const mat = new THREE.MeshBasicMaterial({ color: LANE_COLORS[lane] });
-  const mesh = new THREE.Mesh(noteGeo, mat);
-  mesh.position.set(0, 0.24, SPAWN_Z);
+const hands = [];
 
-  const glowMat = new THREE.SpriteMaterial({ map: glowTex, color: LANE_COLORS[lane], transparent:true, opacity:0.85, blending:THREE.AdditiveBlending, depthWrite:false });
-  const glow = new THREE.Sprite(glowMat);
-  glow.scale.set(1.1,1.1,1.1);
-  mesh.add(glow);
 
-  laneGroups[lane].group.add(mesh);
-  notes.push({ mesh, lane, progress:0, resolved:false });
+/* =========================================================
+   CONFIGURACIÓN
+========================================================= */
+
+const NOTE_SPEED = 4;
+
+const HIT_DISTANCE = 0.35;
+
+
+/* =========================================================
+   COLORES
+========================================================= */
+
+const BLUE =
+    0x00aaff;
+
+const RED =
+    0xff2244;
+
+const GREEN =
+    0x00ff88;
+
+
+/* =========================================================
+   INICIALIZAR
+========================================================= */
+
+function init() {
+
+
+    /* =========================
+       ESCENA
+    ========================= */
+
+    scene =
+        new THREE.Scene();
+
+
+    scene.background =
+        new THREE.Color(
+            0x020207
+        );
+
+
+    /* =========================
+       CÁMARA
+    ========================= */
+
+    camera =
+        new THREE.PerspectiveCamera(
+
+            70,
+
+            window.innerWidth /
+            window.innerHeight,
+
+            0.01,
+
+            100
+
+        );
+
+
+    camera.position.set(
+
+        0,
+        1.6,
+        3
+
+    );
+
+
+    /* =========================
+       RENDERER
+    ========================= */
+
+    renderer =
+        new THREE.WebGLRenderer({
+
+            antialias: true,
+
+            alpha: false
+
+        });
+
+
+    renderer.setPixelRatio(
+
+        Math.min(
+            window.devicePixelRatio,
+            2
+        )
+
+    );
+
+
+    renderer.setSize(
+
+        window.innerWidth,
+        window.innerHeight
+
+    );
+
+
+    renderer.xr.enabled =
+        true;
+
+
+    document
+        .getElementById("game")
+        .appendChild(
+            renderer.domElement
+        );
+
+
+    /* =========================
+       LUZ AMBIENTE
+    ========================= */
+
+    const ambient =
+        new THREE.AmbientLight(
+
+            0xffffff,
+            1.2
+
+        );
+
+
+    scene.add(ambient);
+
+
+    /* =========================
+       LUZ AZUL
+    ========================= */
+
+    const cyanLight =
+        new THREE.PointLight(
+
+            BLUE,
+            10,
+            15
+
+        );
+
+
+    cyanLight.position.set(
+
+        0,
+        3,
+        -4
+
+    );
+
+
+    scene.add(cyanLight);
+
+
+    /* =========================
+       LUZ ROJA
+    ========================= */
+
+    const redLight =
+        new THREE.PointLight(
+
+            RED,
+            8,
+            15
+
+        );
+
+
+    redLight.position.set(
+
+        4,
+        2,
+        -8
+
+    );
+
+
+    scene.add(redLight);
+
+
+    /* =========================
+       ENTORNO
+    ========================= */
+
+    createEnvironment();
+
+
+    /* =========================
+       RESIZE
+    ========================= */
+
+    window.addEventListener(
+
+        "resize",
+        resize
+
+    );
+
+
+    /* =========================
+       LOOP
+    ========================= */
+
+    animate();
+
 }
 
-function removeNote(n){
-  laneGroups[n.lane].group.remove(n.mesh);
-  const idx = notes.indexOf(n);
-  if(idx>-1) notes.splice(idx,1);
-}
 
-/* ============================================================
-   PATTERN GENERATION
-   ============================================================ */
-function generatePattern(){
-  const beat = 60/BPM;
-  const step = beat/2;
-  const pattern = [];
-  let lastLane = -1;
-  let t = 3.0;
-  while(t < SONG_DURATION - 2){
-    const density = t < 8 ? 0.42 : (t > SONG_DURATION-10 ? 0.5 : 0.66);
-    if(Math.random() < density){
-      let lane = Math.floor(Math.random()*LANES);
-      if(lane === lastLane && Math.random()<0.6) lane = (lane+1)%LANES;
-      lastLane = lane;
-      pattern.push({ time:t, lane });
+
+/* =========================================================
+   ENTORNO 360°
+========================================================= */
+
+function createEnvironment() {
+
+
+    /* =========================
+       CIELO
+    ========================= */
+
+    const skyGeometry =
+        new THREE.SphereGeometry(
+
+            40,
+            64,
+            32
+
+        );
+
+
+    const skyMaterial =
+        new THREE.MeshBasicMaterial({
+
+            color:
+                0x030510,
+
+            side:
+                THREE.BackSide
+
+        });
+
+
+    const sky =
+        new THREE.Mesh(
+
+            skyGeometry,
+
+            skyMaterial
+
+        );
+
+
+    scene.add(sky);
+
+
+    /* =========================
+       ESTRELLAS
+    ========================= */
+
+    const geometry =
+        new THREE.BufferGeometry();
+
+
+    const positions = [];
+
+
+    for (
+        let i = 0;
+        i < 1500;
+        i++
+    ) {
+
+
+        positions.push(
+
+            (Math.random() - .5) * 70,
+
+            (Math.random() - .5) * 70,
+
+            (Math.random() - .5) * 70
+
+        );
+
     }
-    t += step;
-  }
-  return pattern;
+
+
+    geometry.setAttribute(
+
+        "position",
+
+        new THREE.Float32BufferAttribute(
+
+            positions,
+            3
+
+        )
+
+    );
+
+
+    const material =
+        new THREE.PointsMaterial({
+
+            color:
+                0x66ddff,
+
+            size:
+                .05
+
+        });
+
+
+    const stars =
+        new THREE.Points(
+
+            geometry,
+            material
+
+        );
+
+
+    scene.add(stars);
+
+
+    /* =========================
+       PISO
+    ========================= */
+
+    const floor =
+        new THREE.GridHelper(
+
+            50,
+            50,
+            BLUE,
+            0x111133
+
+        );
+
+
+    floor.position.y =
+        0;
+
+
+    scene.add(floor);
+
+
+    /* =========================
+       PORTAL
+    ========================= */
+
+    const portalGeometry =
+        new THREE.TorusGeometry(
+
+            4,
+            .08,
+            16,
+            100
+
+        );
+
+
+    const portalMaterial =
+        new THREE.MeshBasicMaterial({
+
+            color:
+                BLUE
+
+        });
+
+
+    const portal =
+        new THREE.Mesh(
+
+            portalGeometry,
+            portalMaterial
+
+        );
+
+
+    portal.position.set(
+
+        0,
+        2,
+        -10
+
+    );
+
+
+    scene.add(portal);
+
+
+    /* =========================
+       OBJETIVOS
+    ========================= */
+
+    createTarget(
+
+        -1.5,
+        BLUE
+
+    );
+
+
+    createTarget(
+
+        1.5,
+        RED
+
+    );
+
+
+    createTarget(
+
+        0,
+        GREEN
+
+    );
+
 }
 
-/* ============================================================
-   INPUT: keyboard / touch (held state) + hands (continuous)
-   ============================================================ */
-const heldLanes = new Set();
-const handLaneActive = [false,false,false,false];
 
-function laneActive(i){ return heldLanes.has(i) || handLaneActive[i]; }
 
-function setChipVisual(i, on){
-  const chip = document.getElementById('chip-'+i);
-  if(chip) chip.classList.toggle('on', on);
-  const tb = document.getElementById('touch-'+i);
-  if(tb) tb.classList.toggle('on', on);
+/* =========================================================
+   CREAR OBJETIVO
+========================================================= */
+
+function createTarget(
+
+    x,
+    color
+
+) {
+
+
+    const geometry =
+        new THREE.TorusGeometry(
+
+            .45,
+            .06,
+            16,
+            32
+
+        );
+
+
+    const material =
+        new THREE.MeshBasicMaterial({
+
+            color:
+                color
+
+        });
+
+
+    const ring =
+        new THREE.Mesh(
+
+            geometry,
+            material
+
+        );
+
+
+    ring.position.set(
+
+        x,
+        1.4,
+        -2
+
+    );
+
+
+    scene.add(ring);
+
 }
 
-window.addEventListener('keydown', (e)=>{
-  const i = LANE_KEYS.indexOf(e.key.toLowerCase());
-  if(i>-1 && !heldLanes.has(i)){ heldLanes.add(i); setChipVisual(i,true); }
-});
-window.addEventListener('keyup', (e)=>{
-  const i = LANE_KEYS.indexOf(e.key.toLowerCase());
-  if(i>-1){ heldLanes.delete(i); setChipVisual(i,false); }
-});
 
-for(let i=0;i<LANES;i++){
-  const tb = document.getElementById('touch-'+i);
-  const press = (ev)=>{ ev.preventDefault(); heldLanes.add(i); setChipVisual(i,true); };
-  const release = (ev)=>{ ev.preventDefault(); heldLanes.delete(i); setChipVisual(i,false); };
-  tb.addEventListener('touchstart', press, {passive:false});
-  tb.addEventListener('touchend', release, {passive:false});
-  tb.addEventListener('mousedown', press);
-  tb.addEventListener('mouseup', release);
-  tb.addEventListener('mouseleave', release);
-}
 
-/* ============================================================
-   LOOK-AROUND (drag to rotate camera; highway stays screen-fixed)
-   ============================================================ */
-let yaw = 0, pitch = 0, dragging = false, lastPX = 0, lastPY = 0;
-canvas.addEventListener('pointerdown', (e)=>{ dragging = true; lastPX = e.clientX; lastPY = e.clientY; });
-window.addEventListener('pointermove', (e)=>{
-  if(!dragging) return;
-  const dx = e.clientX - lastPX, dy = e.clientY - lastPY;
-  lastPX = e.clientX; lastPY = e.clientY;
-  yaw -= dx * 0.0026;
-  pitch -= dy * 0.0022;
-  pitch = THREE.MathUtils.clamp(pitch, -0.32, 0.32);
-  yaw = THREE.MathUtils.clamp(yaw, -0.95, 0.95);
-});
-window.addEventListener('pointerup', ()=> dragging = false);
+/* =========================================================
+   CREAR NOTA
+========================================================= */
 
-/* ============================================================
-   HAND TRACKING (MediaPipe)
-   ============================================================ */
-let mpCamera = null;
-let handTrackingReady = false;
+function createNote() {
 
-function onHandsResults(results){
-  handLaneActive.fill(false);
-  handOverlayCtx.clearRect(0,0,handOverlayCanvas.width, handOverlayCanvas.height);
-  previewCtx.clearRect(0,0,previewOverlay.width, previewOverlay.height);
 
-  if(results.multiHandLandmarks && results.multiHandLandmarks.length){
-    for(const landmarks of results.multiHandLandmarks){
-      const tip = landmarks[8];
-      const mx = 1 - tip.x;
-      const lane = Math.min(LANES-1, Math.max(0, Math.floor(mx*LANES)));
-      handLaneActive[lane] = true;
+    const random =
+        Math.random();
 
-      const sx = mx * handOverlayCanvas.width;
-      const sy = tip.y * handOverlayCanvas.height;
-      handOverlayCtx.beginPath();
-      handOverlayCtx.arc(sx, sy, 26, 0, Math.PI*2);
-      handOverlayCtx.fillStyle = LANE_COLORS_CSS[lane] + '55';
-      handOverlayCtx.fill();
-      handOverlayCtx.beginPath();
-      handOverlayCtx.arc(sx, sy, 9, 0, Math.PI*2);
-      handOverlayCtx.fillStyle = LANE_COLORS_CSS[lane];
-      handOverlayCtx.fill();
 
-      const px = mx * previewOverlay.width;
-      const py = tip.y * previewOverlay.height;
-      previewCtx.beginPath();
-      previewCtx.arc(px, py, 6, 0, Math.PI*2);
-      previewCtx.fillStyle = LANE_COLORS_CSS[lane];
-      previewCtx.fill();
+    let type;
+
+    let color;
+
+    let x;
+
+
+    /* =========================
+       NOTA IZQUIERDA
+    ========================= */
+
+    if (
+        random < .4
+    ) {
+
+        type =
+            "left";
+
+        color =
+            BLUE;
+
+        x =
+            -1.5;
+
     }
-  }
-  for(let i=0;i<LANES;i++) setChipVisual(i, laneActive(i));
-}
 
-async function initHandTracking(){
-  return new Promise((resolve, reject)=>{
-    try{
-      const hands = new Hands({ locateFile: (f)=> `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/${f}` });
-      hands.setOptions({ maxNumHands:2, modelComplexity:0, minDetectionConfidence:0.6, minTrackingConfidence:0.5 });
-      hands.onResults(onHandsResults);
 
-      mpCamera = new Camera(hudVideo, {
-        onFrame: async ()=>{ await hands.send({ image: hudVideo }); },
-        width: 480, height: 360
-      });
-      mpCamera.start().then(()=>{
-        handTrackingReady = true;
-        previewVideo.srcObject = hudVideo.srcObject;
-        resolve();
-      }).catch(reject);
-    }catch(err){ reject(err); }
-  });
-}
-function stopHandTracking(){
-  if(mpCamera){ try{ mpCamera.stop(); }catch(e){} }
-  if(hudVideo.srcObject){ hudVideo.srcObject.getTracks().forEach(t=>t.stop()); }
-}
+    /* =========================
+       NOTA DERECHA
+    ========================= */
 
-/* ============================================================
-   GAME STATE
-   ============================================================ */
-const state = {
-  running:false, mode:'manual',
-  score:0, combo:0, maxCombo:0, hits:0, misses:0,
-  startTime:0, pattern:[], nextIndex:0
-};
+    else if (
+        random < .8
+    ) {
 
-function judge(text, color){
-  judgeEl.textContent = text;
-  judgeEl.style.color = color;
-  judgeEl.classList.remove('show'); void judgeEl.offsetWidth;
-  judgeEl.classList.add('show');
-}
-function toast(msg){
-  toastEl.textContent = msg;
-  toastEl.classList.add('show');
-  setTimeout(()=>toastEl.classList.remove('show'), 1800);
-}
+        type =
+            "right";
 
-function resetGame(){
-  notes.slice().forEach(removeNote);
-  state.score=0; state.combo=0; state.maxCombo=0; state.hits=0; state.misses=0;
-  state.pattern = generatePattern();
-  state.nextIndex = 0;
-  scoreVal.textContent = '0';
-  comboVal.textContent = '0';
-  songProgress.style.width = '0%';
-}
+        color =
+            RED;
 
-function onHit(lane, n){
-  n.resolved = true;
-  removeNote(n);
-  state.combo++;
-  state.maxCombo = Math.max(state.maxCombo, state.combo);
-  const mult = 1 + Math.floor(state.combo/10);
-  state.score += 100*Math.min(mult,4);
-  state.hits++;
-  scoreVal.textContent = state.score;
-  comboVal.textContent = state.combo;
-  hitSound(lane);
-  judge(state.combo % 5 === 0 && state.combo>0 ? '¡PERFECTO x'+state.combo+'!' : 'ACIERTO', LANE_COLORS_CSS[lane]);
-  laneGroups[lane].flashOpacity = 1;
-}
-function onMiss(n){
-  n.resolved = true;
-  removeNote(n);
-  state.combo = 0;
-  state.misses++;
-  comboVal.textContent = '0';
-  missSound();
-  judge('FALLO', '#ff5566');
-}
+        x =
+            1.5;
 
-function startGame(mode){
-  state.mode = mode;
-  resetGame();
-  state.running = true;
-  state.startTime = performance.now()/1000;
-  overlay.classList.add('hidden');
-  hud.classList.add('active');
-  touchControls.classList.toggle('show', mode==='manual');
-  camPreview.classList.toggle('show', mode==='hands');
-  ensureAudio();
-  startBeat();
-}
-
-function endGame(){
-  state.running = false;
-  stopBeat();
-  hud.classList.remove('active');
-  const total = state.hits+state.misses;
-  const acc = total ? Math.round((state.hits/total)*100) : 0;
-  overlay.classList.remove('hidden');
-  overlay.querySelector('.card').innerHTML = `
-    <div class="eyebrow">FIN DE LA SESIÓN</div>
-    <h1 class="title">RESULTADOS</h1>
-    <div class="rules">
-      <div class="rule"><span>⭐</span><div><b>PUNTAJE</b>${state.score}</div></div>
-      <div class="rule"><span>🔥</span><div><b>COMBO MÁXIMO</b>${state.maxCombo}</div></div>
-      <div class="rule"><span>🎯</span><div><b>PRECISIÓN</b>${acc}%</div></div>
-      <div class="rule"><span>✅</span><div><b>ACIERTOS / FALLOS</b>${state.hits} / ${state.misses}</div></div>
-    </div>
-    <div class="btn-row">
-      <button id="btn-retry" class="btn primary">↻ &nbsp;JUGAR DE NUEVO (${state.mode==='hands'?'manos':'teclado'})</button>
-      <button id="btn-menu" class="btn secondary">☰ &nbsp;VOLVER AL MENÚ</button>
-    </div>
-  `;
-  document.getElementById('btn-retry').addEventListener('click', ()=> startGame(state.mode));
-  document.getElementById('btn-menu').addEventListener('click', showMenu);
-}
-
-function showMenu(){
-  if(state.running){ state.running = false; stopBeat(); }
-  hud.classList.remove('active');
-  touchControls.classList.remove('show');
-  overlay.classList.remove('hidden');
-  overlay.querySelector('.card').innerHTML = `
-    <div class="eyebrow">RITMO · ENTORNO 360°</div>
-    <h1 class="title">NEBULA HERO</h1>
-    <p class="sub">Un campo de asteroides gira a tu alrededor. Los nodos de luz caen por cuatro carriles: tócalos justo cuando lleguen a la línea, con las manos frente a la cámara o con tu teclado.</p>
-    <div class="rules">
-      <div class="rule"><span>🖐️</span><div><b>MODO MANOS</b>Activa la cámara y mueve la mano sobre cada carril</div></div>
-      <div class="rule"><span>⌨️</span><div><b>MODO TECLADO / TÁCTIL</b>Usa D F J K o los botones en pantalla</div></div>
-      <div class="rule"><span>◐</span><div><b>MIRAR ALREDEDOR</b>Arrastra el fondo para explorar los 360°</div></div>
-      <div class="rule"><span>🔥</span><div><b>COMBO</b>Encadena aciertos para multiplicar tu puntaje</div></div>
-    </div>
-    <div class="btn-row">
-      <button id="btn-hands" class="btn primary">🖐️ &nbsp;JUGAR CON LAS MANOS (cámara)</button>
-      <button id="btn-manual" class="btn secondary">⌨️ &nbsp;JUGAR CON TECLADO / TÁCTIL</button>
-    </div>
-    <div class="status-line" id="status-line"></div>
-    <div class="hint">Necesitarás permitir el acceso a la cámara para el modo manos. El video nunca se envía a ningún servidor: todo el seguimiento ocurre en tu navegador.</div>
-  `;
-  bindMenuButtons();
-}
-
-function bindMenuButtons(){
-  document.getElementById('btn-hands').addEventListener('click', async ()=>{
-    ensureAudio();
-    const line = document.getElementById('status-line');
-    line.textContent = 'Solicitando acceso a la cámara…';
-    try{
-      await initHandTracking();
-      line.textContent = '';
-      startGame('hands');
-    }catch(err){
-      line.textContent = 'No se pudo activar la cámara. Se inicia en modo teclado.';
-      setTimeout(()=> startGame('manual'), 900);
     }
-  });
-  document.getElementById('btn-manual').addEventListener('click', ()=>{
-    ensureAudio();
-    startGame('manual');
-  });
-}
-bindMenuButtons();
 
-document.getElementById('exit-btn').addEventListener('click', ()=>{
-  if(state.mode==='hands') stopHandTracking();
-  showMenu();
-});
 
-/* ============================================================
-   MAIN LOOP
-   ============================================================ */
-function updateGame(dt, songTime){
-  songProgress.style.width = Math.min(100, (songTime/SONG_DURATION)*100) + '%';
+    /* =========================
+       NOTA DOBLE
+    ========================= */
 
-  while(state.nextIndex < state.pattern.length &&
-        state.pattern[state.nextIndex].time - TRAVEL_TIME <= songTime){
-    spawnNote(state.pattern[state.nextIndex].lane);
-    state.nextIndex++;
-  }
+    else {
 
-  for(const n of notes.slice()){
-    n.progress += dt / TRAVEL_TIME;
-    const z = THREE.MathUtils.lerp(SPAWN_Z, HIT_Z, Math.min(n.progress,1.3));
-    n.mesh.position.z = z;
-    const scale = 0.55 + Math.min(n.progress,1)*0.75;
-    n.mesh.scale.setScalar(scale);
-    n.mesh.rotation.x += dt*1.4;
-    n.mesh.rotation.y += dt*1.8;
+        type =
+            "both";
 
-    if(!n.resolved){
-      if(n.progress >= HIT_WINDOW_EARLY && n.progress <= HIT_WINDOW_LATE && laneActive(n.lane)){
-        onHit(n.lane, n);
-      } else if(n.progress > MISS_AT){
-        onMiss(n);
-      }
+        color =
+            GREEN;
+
+        x =
+            0;
+
     }
-  }
 
-  for(const lg of laneGroups){
-    if(lg.flashOpacity > 0){
-      lg.flashOpacity = Math.max(0, lg.flashOpacity - dt*2.6);
-      lg.flash.material.opacity = lg.flashOpacity*0.9;
-      lg.flash.scale.setScalar(1.6 + (1-lg.flashOpacity)*1.4);
+
+    /* =========================
+       GEOMETRÍA
+    ========================= */
+
+    const geometry =
+        new THREE.IcosahedronGeometry(
+
+            .35,
+            1
+
+        );
+
+
+    const material =
+        new THREE.MeshStandardMaterial({
+
+            color:
+                color,
+
+            emissive:
+                color,
+
+            emissiveIntensity:
+                2
+
+        });
+
+
+    const mesh =
+        new THREE.Mesh(
+
+            geometry,
+            material
+
+        );
+
+
+    mesh.position.set(
+
+        x,
+        1.4,
+        -15
+
+    );
+
+
+    mesh.userData.type =
+        type;
+
+
+    scene.add(mesh);
+
+
+    notes.push(mesh);
+
+}
+
+
+
+/* =========================================================
+   COMPROBAR GOLPE
+========================================================= */
+
+function checkHit(
+
+    handPosition,
+    handSide
+
+) {
+
+
+    if (!running) {
+
+        return;
+
     }
-    lg.ring.material.opacity = 0.6 + Math.sin(performance.now()*0.004)*0.2;
-  }
 
-  if(songTime > SONG_DURATION + 1.5 && notes.length === 0){
-    endGame();
-  }
+
+    for (
+        let i = notes.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+
+        const note =
+            notes[i];
+
+
+        const distance =
+            handPosition.distanceTo(
+                note.position
+            );
+
+
+        if (
+            distance >
+            HIT_DISTANCE
+        ) {
+
+            continue;
+
+        }
+
+
+        const type =
+            note.userData.type;
+
+
+        let valid =
+            false;
+
+
+        /* IZQUIERDA */
+
+        if (
+            type === "left" &&
+            handSide === "left"
+        ) {
+
+            valid = true;
+
+        }
+
+
+        /* DERECHA */
+
+        if (
+            type === "right" &&
+            handSide === "right"
+        ) {
+
+            valid = true;
+
+        }
+
+
+        /* DOBLE */
+
+        if (
+            type === "both"
+        ) {
+
+            valid = true;
+
+        }
+
+
+        if (valid) {
+
+
+            hitNote(note);
+
+
+            notes.splice(
+                i,
+                1
+            );
+
+
+            break;
+
+        }
+
+    }
+
 }
 
-let lastT = performance.now();
-function animate(){
-  requestAnimationFrame(animate);
-  const now = performance.now();
-  const dt = Math.min(0.05, (now-lastT)/1000);
-  lastT = now;
 
-  skyMesh.rotation.y += dt*0.006;
 
-  camera.rotation.set(pitch, yaw, 0, 'YXZ');
+/* =========================================================
+   ACIERTO
+========================================================= */
 
-  if(state.running){
-    const songTime = (now/1000) - state.startTime;
-    updateGame(dt, songTime);
-  }
+function hitNote(note) {
 
-  renderer.render(scene, camera);
+
+    scene.remove(note);
+
+
+    hits++;
+
+    combo++;
+
+
+    score +=
+
+        100 +
+        combo * 10;
+
+
+    document
+        .getElementById("score")
+        .textContent =
+        score;
+
+
+    document
+        .getElementById("combo")
+        .textContent =
+        "x" + combo;
+
+
+    showMessage(
+
+        "¡ACIERTO!",
+
+        "#00ff88"
+
+    );
+
 }
 
-function onResize(){
-  camera.aspect = window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  resizeOverlayCanvases();
+
+
+/* =========================================================
+   FALLO
+========================================================= */
+
+function missNote(note) {
+
+
+    scene.remove(note);
+
+
+    misses++;
+
+
+    combo = 0;
+
+
+    document
+        .getElementById("combo")
+        .textContent =
+        "x0";
+
+
+    showMessage(
+
+        "MISS",
+
+        "#ff2244"
+
+    );
+
 }
-window.addEventListener('resize', onResize);
-resizeOverlayCanvases();
-animate();
+
+
+
+/* =========================================================
+   MENSAJE
+========================================================= */
+
+function showMessage(
+
+    text,
+    color
+
+) {
+
+
+    const element =
+        document.getElementById(
+            "message"
+        );
+
+
+    element.textContent =
+        text;
+
+
+    element.style.color =
+        color;
+
+
+    element.style.textShadow =
+        `0 0 30px ${color}`;
+
+
+    element.style.opacity =
+        "1";
+
+
+    setTimeout(
+
+        () => {
+
+            element.style.opacity =
+                "0";
+
+        },
+
+        350
+
+    );
+
+}
+
+
+
+/* =========================================================
+   ACTUALIZAR NOTAS
+========================================================= */
+
+let lastSpawn =
+    0;
+
+
+function updateNotes(
+
+    delta
+
+) {
+
+
+    if (!running) {
+
+        return;
+
+    }
+
+
+    for (
+        let i = notes.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+
+        const note =
+            notes[i];
+
+
+        /* MOVER */
+
+        note.position.z +=
+
+            NOTE_SPEED *
+            delta;
+
+
+        /* ROTAR */
+
+        note.rotation.x +=
+            delta * 2;
+
+
+        note.rotation.y +=
+            delta * 3;
+
+
+        /* =========================
+           SI PASÓ EL OBJETIVO
+        ========================= */
+
+        if (
+            note.position.z >
+            -1.4
+        ) {
+
+
+            missNote(note);
+
+
+            notes.splice(
+                i,
+                1
+            );
+
+        }
+
+    }
+
+}
+
+
+
+/* =========================================================
+   CREAR REPRESENTACIÓN DE MANO
+========================================================= */
+
+function createHandModel(
+
+    xrHand,
+    side
+
+) {
+
+
+    const group =
+        new THREE.Group();
+
+
+    group.userData.xrHand =
+        xrHand;
+
+
+    group.userData.side =
+        side;
+
+
+    scene.add(group);
+
+
+    hands.push(group);
+
+
+    return group;
+
+}
+
+
+
+/* =========================================================
+   ACTUALIZAR MANOS
+========================================================= */
+
+function updateHands(
+
+    frame
+
+) {
+
+
+    if (
+        !xrSession ||
+        !referenceSpace ||
+        !running
+    ) {
+
+        return;
+
+    }
+
+
+    for (
+        const handGroup of hands
+    ) {
+
+
+        const xrHand =
+            handGroup.userData.xrHand;
+
+
+        const side =
+            handGroup.userData.side;
+
+
+        const joint =
+            xrHand.get(
+
+                "index-finger-tip"
+
+            );
+
+
+        if (!joint) {
+
+            continue;
+
+        }
+
+
+        const pose =
+            frame.getJointPose(
+
+                joint,
+
+                referenceSpace
+
+            );
+
+
+        if (!pose) {
+
+            continue;
+
+        }
+
+
+        const p =
+            pose.transform.position;
+
+
+        const position =
+            new THREE.Vector3(
+
+                p.x,
+                p.y,
+                p.z
+
+            );
+
+
+        handGroup.position.copy(
+            position
+        );
+
+
+        /* COMPROBAR GOLPE */
+
+        checkHit(
+
+            position,
+            side
+
+        );
+
+    }
+
+}
+
+
+
+/* =========================================================
+   CONFIGURAR MANOS XR
+========================================================= */
+
+function setupXRHands(
+
+    session
+
+) {
+
+
+    xrSession =
+        session;
+
+
+    session.addEventListener(
+
+        "inputsourceschange",
+
+        () => {
+
+            updateInputSources();
+
+        }
+
+    );
+
+
+    updateInputSources();
+
+}
+
+
+
+/* =========================================================
+   ACTUALIZAR INPUT SOURCES
+========================================================= */
+
+function updateInputSources() {
+
+
+    /* =========================
+       ELIMINAR MANOS ANTERIORES
+    ========================= */
+
+    for (
+        let i = hands.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+        scene.remove(
+            hands[i]
+        );
+
+    }
+
+
+    hands.length = 0;
+
+
+    if (!xrSession) {
+
+        return;
+
+    }
+
+
+    /* =========================
+       BUSCAR MANOS
+    ========================= */
+
+    for (
+        const source
+        of xrSession.inputSources
+    ) {
+
+
+        if (
+            source.hand
+        ) {
+
+
+            const side =
+                source.handedness;
+
+
+            createHandModel(
+
+                source.hand,
+
+                side
+
+            );
+
+        }
+
+    }
+
+}
+
+
+
+/* =========================================================
+   ENTRAR EN VR
+========================================================= */
+
+async function startVR() {
+
+
+    const status =
+        document.getElementById(
+            "status"
+        );
+
+
+    status.textContent =
+        "Iniciando VR...";
+
+
+    /* =========================
+       COMPROBAR WEBXR
+    ========================= */
+
+    if (
+        !navigator.xr
+    ) {
+
+
+        status.textContent =
+            "WebXR no está disponible.";
+
+        return;
+
+    }
+
+
+    try {
+
+
+        /* =========================
+           COMPROBAR SOPORTE
+        ========================= */
+
+        const supported =
+            await navigator.xr.isSessionSupported(
+
+                "immersive-vr"
+
+            );
+
+
+        if (!supported) {
+
+
+            status.textContent =
+                "Este dispositivo no soporta VR inmersiva.";
+
+            return;
+
+        }
+
+
+        /* =========================
+           SOLICITAR SESIÓN
+        ========================= */
+
+        const session =
+            await navigator.xr.requestSession(
+
+                "immersive-vr",
+
+                {
+
+                    requiredFeatures: [
+
+                        "local-floor"
+
+                    ],
+
+                    optionalFeatures: [
+
+                        "hand-tracking",
+
+                        "bounded-floor"
+
+                    ]
+
+                }
+
+            );
+
+
+        /* =========================
+           ACTIVAR MODO VR
+        ========================= */
+
+        xrMode =
+            true;
+
+
+        xrSession =
+            session;
+
+
+        /* =========================
+           CONECTAR SESSION
+        ========================= */
+
+        await renderer.xr.setSession(
+
+            session
+
+        );
+
+
+        /* =========================
+           REFERENCE SPACE
+        ========================= */
+
+        referenceSpace =
+            await session.requestReferenceSpace(
+
+                "local-floor"
+
+            );
+
+
+        /* =========================
+           MANOS
+        ========================= */
+
+        setupXRHands(
+
+            session
+
+        );
+
+
+        /* =========================
+           OCULTAR MENÚ
+        ========================= */
+
+        document
+            .getElementById("menu")
+            .style.display =
+            "none";
+
+
+        /* =========================
+           MOSTRAR HUD
+        ========================= */
+
+        document
+            .getElementById("hud")
+            .style.display =
+            "block";
+
+
+        /* =========================
+           EVENTO SALIR VR
+        ========================= */
+
+        session.addEventListener(
+
+            "end",
+
+            () => {
+
+
+                xrSession =
+                    null;
+
+
+                referenceSpace =
+                    null;
+
+
+                xrMode =
+                    false;
+
+
+                /* DETENER JUEGO */
+
+                running =
+                    false;
+
+
+                /* OCULTAR HUD */
+
+                document
+                    .getElementById("hud")
+                    .style.display =
+                    "none";
+
+
+                /* MOSTRAR MENÚ */
+
+                document
+                    .getElementById("menu")
+                    .style.display =
+                    "flex";
+
+
+                /* BORRAR NOTAS */
+
+                for (
+                    let i = notes.length - 1;
+                    i >= 0;
+                    i--
+                ) {
+
+                    scene.remove(
+                        notes[i]
+                    );
+
+                }
+
+
+                notes.length = 0;
+
+
+            }
+
+        );
+
+
+        /* =========================
+           EMPEZAR JUEGO
+        ========================= */
+
+        startGame();
+
+
+    }
+
+    catch (error) {
+
+
+        console.error(
+            error
+        );
+
+
+        status.textContent =
+            "No se pudo iniciar la experiencia VR.";
+
+    }
+
+}
+
+
+
+/* =========================================================
+   MODO ESCRITORIO
+========================================================= */
+
+function startDesktop() {
+
+
+    xrMode =
+        false;
+
+
+    xrSession =
+        null;
+
+
+    referenceSpace =
+        null;
+
+
+    /* =========================
+       OCULTAR MENÚ
+    ========================= */
+
+    document
+        .getElementById("menu")
+        .style.display =
+        "none";
+
+
+    /* =========================
+       MOSTRAR HUD
+    ========================= */
+
+    document
+        .getElementById("hud")
+        .style.display =
+        "block";
+
+
+    /* =========================
+       EMPEZAR
+    ========================= */
+
+    startGame();
+
+}
+
+
+
+/* =========================================================
+   INICIAR JUEGO
+========================================================= */
+
+function startGame() {
+
+
+    /* =========================
+       ACTIVAR ESTADO
+    ========================= */
+
+    running =
+        true;
+
+
+    /* =========================
+       REINICIAR ESTADÍSTICAS
+    ========================= */
+
+    score =
+        0;
+
+    combo =
+        0;
+
+    hits =
+        0;
+
+    misses =
+        0;
+
+
+    /* =========================
+       BORRAR NOTAS ANTERIORES
+    ========================= */
+
+    for (
+        let i = notes.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+        scene.remove(
+            notes[i]
+        );
+
+    }
+
+
+    notes.length = 0;
+
+
+    /* =========================
+       REINICIAR SPAWN
+    ========================= */
+
+    lastSpawn =
+        0;
+
+
+    /* =========================
+       ACTUALIZAR HUD
+    ========================= */
+
+    document
+        .getElementById("score")
+        .textContent =
+        "0";
+
+
+    document
+        .getElementById("combo")
+        .textContent =
+        "x0";
+
+
+    /* =========================
+       OCULTAR MENSAJE
+    ========================= */
+
+    document
+        .getElementById("message")
+        .style.opacity =
+        "0";
+
+}
+
+
+
+/* =========================================================
+   LOOP
+========================================================= */
+
+function animate() {
+
+
+    renderer.setAnimationLoop(
+
+        render
+
+    );
+
+}
+
+
+
+/* =========================================================
+   RENDER
+========================================================= */
+
+function render(
+
+    time,
+    frame
+
+) {
+
+
+    /* =========================
+       DELTA TIME
+    ========================= */
+
+    const delta =
+        Math.min(
+
+            0.05,
+
+            (
+                time -
+                (
+                    render.lastTime ||
+                    time
+                )
+            ) / 1000
+
+        );
+
+
+    render.lastTime =
+        time;
+
+
+    /* =========================
+       SOLO EJECUTAR SI JUGANDO
+    ========================= */
+
+    if (
+        stateRunning()
+    ) {
+
+
+        /* =========================
+           SPAWN
+        ========================= */
+
+        lastSpawn +=
+            delta * 1000;
+
+
+        if (
+            lastSpawn >= 900
+        ) {
+
+
+            createNote();
+
+
+            lastSpawn =
+                0;
+
+        }
+
+
+        /* =========================
+           ACTUALIZAR NOTAS
+        ========================= */
+
+        updateNotes(
+
+            delta
+
+        );
+
+
+        /* =========================
+           ACTUALIZAR MANOS
+        ========================= */
+
+        if (
+            frame &&
+            xrMode
+        ) {
+
+
+            updateHands(
+
+                frame
+
+            );
+
+        }
+
+    }
+
+
+    /* =========================
+       CÁMARA ESCRITORIO
+    ========================= */
+
+    if (!xrMode) {
+
+
+        camera.position.x =
+
+            Math.sin(
+                time * 0.00015
+            ) * 0.1;
+
+    }
+
+
+    /* =========================
+       RENDER
+    ========================= */
+
+    renderer.render(
+
+        scene,
+
+        camera
+
+    );
+
+}
+
+
+
+/* =========================================================
+   ESTADO DEL JUEGO
+========================================================= */
+
+function stateRunning() {
+
+
+    return running;
+
+}
+
+
+
+/* =========================================================
+   BOTÓN VR
+========================================================= */
+
+document
+    .getElementById("vrButton")
+    .addEventListener(
+
+        "click",
+
+        startVR
+
+    );
+
+
+
+/* =========================================================
+   BOTÓN DESKTOP
+========================================================= */
+
+document
+    .getElementById("desktopButton")
+    .addEventListener(
+
+        "click",
+
+        startDesktop
+
+    );
+
+
+
+/* =========================================================
+   RESIZE
+========================================================= */
+
+function resize() {
+
+
+    camera.aspect =
+
+        window.innerWidth /
+        window.innerHeight;
+
+
+    camera.updateProjectionMatrix();
+
+
+    renderer.setSize(
+
+        window.innerWidth,
+
+        window.innerHeight
+
+    );
+
+}
+
+
+
+/* =========================================================
+   INICIAR
+========================================================= */
+
+init();
+
+
 </script>
+
 </body>
+
 </html>
